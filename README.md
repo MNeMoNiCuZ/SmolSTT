@@ -25,7 +25,7 @@ and outputs text to clipboard and/or inserts it into the active app.
 
 SmolSTT expects an OpenAI-compatible Whisper transcription server.
 
-- Recommended server: [whisper-fastapi](https://github.com/heimoshuiyu/whisper-fastapi)
+- Recommended server: [heimoshuiyu/whisper-fastapi](https://github.com/heimoshuiyu/whisper-fastapi)
 - It is easy to set up with Docker using that repository's instructions.
 
 ## Setup
