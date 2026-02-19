@@ -212,3 +212,6 @@ AGENTS.md
 .env
 venv
 .venv
+.pyinstaller_tmp
+build
+dist
