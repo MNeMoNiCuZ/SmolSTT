@@ -4,6 +4,17 @@ import os
 APP_NAME = "SmolSTT"
 
 
+def _autostart_command() -> str:
+    """Return the command stored in HKCU\\...\\Run for this app."""
+    if getattr(sys, "frozen", False):
+        return f'"{os.path.abspath(sys.executable)}"'
+
+    exe = os.path.abspath(sys.executable)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    script = os.path.join(project_root, "app.py")
+    return f'"{exe}" "{script}"'
+
+
 def set_autostart(enabled: bool):
     try:
         import winreg
@@ -15,9 +26,7 @@ def set_autostart(enabled: bool):
             winreg.KEY_SET_VALUE,
         )
         if enabled:
-            exe = sys.executable
-            script = os.path.abspath(os.path.join(os.path.dirname(__file__), "app.py"))
-            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, f'"{exe}" "{script}"')
+            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, _autostart_command())
         else:
             try:
                 winreg.DeleteValue(key, APP_NAME)

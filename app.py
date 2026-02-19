@@ -37,7 +37,12 @@ pyautogui.PAUSE = 0
 class SmolSTTApp:
     def __init__(self):
         log.info("=== SmolSTT starting ===")
-        faulthandler.enable(all_threads=True)
+        try:
+            # Windowed/frozen builds can start without stderr.
+            if sys.stderr is not None:
+                faulthandler.enable(all_threads=True)
+        except Exception:
+            pass
         self._install_crash_logging()
         self._settings = SettingsManager()
 

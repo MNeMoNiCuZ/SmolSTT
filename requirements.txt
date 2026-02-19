@@ -8,3 +8,4 @@ pyperclip>=1.8.2
 pyautogui>=0.9.54
 pynput>=1.7.6
 PyQt6>=6.7.0
+pyinstaller>=6.0.0
