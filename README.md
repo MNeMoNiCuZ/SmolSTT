@@ -4,6 +4,11 @@ SmolSTT is a minimal global push-to-talk speech-to-text desktop app for Windows.
 It records microphone audio, sends it to an OpenAI-compatible Whisper endpoint,
 and outputs text to clipboard and/or inserts it into the active app.
 
+![STT01](https://github.com/user-attachments/assets/9dca2ccd-a4e9-4d86-aadb-cc565987088e)
+
+<img width="981" height="806" alt="image" src="https://github.com/user-attachments/assets/fc8a2dd0-8879-4936-b493-bf4b270c5596" />
+
+
 ## Features
 
 - Global hotkey capture (`toggle` or `hold`)
@@ -23,9 +28,9 @@ and outputs text to clipboard and/or inserts it into the active app.
 
 ## Whisper Server
 
-SmolSTT expects an OpenAI-compatible Whisper transcription server.
+SmolSTT requires an Whisper-compatible transcription server.
 
-- Recommended server: [whisper-fastapi](https://github.com/heimoshuiyu/whisper-fastapi)
+- Recommended server: [heimoshuiyu/whisper-fastapi](https://github.com/heimoshuiyu/whisper-fastapi)
 - It is easy to set up with Docker using that repository's instructions.
 
 ## Setup
@@ -65,6 +70,9 @@ All settings are available in the app Settings window.
 - `hotkey_mode`:
   - `toggle`: press once to start, press again to stop
   - `hold`: record while key is held
+ 
+  <img width="723" height="335" alt="image" src="https://github.com/user-attachments/assets/b8a9f482-cdce-4de7-9471-99b6882e1a41" />
+
 
 ### Microphone
 
