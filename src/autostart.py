@@ -1,7 +1,10 @@
 import sys
 import os
 
+from logger import log
+
 APP_NAME = "SmolSTT"
+_KEY_PATH = r"Software\Microsoft\Windows\CurrentVersion\Run"
 
 
 def _autostart_command() -> str:
@@ -18,32 +21,40 @@ def _autostart_command() -> str:
 def set_autostart(enabled: bool):
     try:
         import winreg
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         key = winreg.OpenKey(
             winreg.HKEY_CURRENT_USER,
-            key_path,
+            _KEY_PATH,
             0,
             winreg.KEY_SET_VALUE,
         )
-        if enabled:
-            winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, _autostart_command())
-        else:
-            try:
-                winreg.DeleteValue(key, APP_NAME)
-            except FileNotFoundError:
-                pass
-        winreg.CloseKey(key)
+        try:
+            if enabled:
+                cmd = _autostart_command()
+                winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, cmd)
+                log.debug("Autostart enabled: %s", cmd)
+            else:
+                try:
+                    winreg.DeleteValue(key, APP_NAME)
+                    log.debug("Autostart disabled.")
+                except FileNotFoundError:
+                    pass
+        finally:
+            winreg.CloseKey(key)
     except Exception:
-        pass
+        log.exception("Failed to update autostart registry entry.")
 
 
 def is_autostart_enabled() -> bool:
     try:
         import winreg
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path)
-        winreg.QueryValueEx(key, APP_NAME)
-        winreg.CloseKey(key)
-        return True
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _KEY_PATH)
+        try:
+            winreg.QueryValueEx(key, APP_NAME)
+            return True
+        except FileNotFoundError:
+            return False
+        finally:
+            winreg.CloseKey(key)
     except Exception:
+        log.exception("Failed to read autostart registry entry.")
         return False

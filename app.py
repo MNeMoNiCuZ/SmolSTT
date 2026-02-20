@@ -18,7 +18,7 @@ import pyperclip
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
 from api_client import WhisperClient
-from autostart import set_autostart
+from autostart import set_autostart, is_autostart_enabled
 from hotkey_manager import HotkeyManager
 from logger import log
 from overlay import RecordingOverlay
@@ -332,7 +332,8 @@ class SmolSTTApp:
             new_settings.get("hotkey") != self._settings.get("hotkey")
             or new_settings.get("hotkey_mode") != self._settings.get("hotkey_mode")
         )
-        autostart_changed = new_settings.get("autostart") != self._settings.get("autostart")
+        autostart_wanted = bool(new_settings.get("autostart"))
+        autostart_changed = autostart_wanted != is_autostart_enabled()
 
         self._settings.update(new_settings)
         self._apply_theme()
@@ -341,7 +342,7 @@ class SmolSTTApp:
             self._register_hotkey()
 
         if autostart_changed:
-            set_autostart(bool(new_settings.get("autostart")))
+            set_autostart(autostart_wanted)
 
     def quit(self):
         self._hotkey_mgr.stop()

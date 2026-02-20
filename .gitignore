@@ -215,3 +215,4 @@ venv
 .pyinstaller_tmp
 build
 dist
+SmolSTT.ini

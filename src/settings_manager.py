@@ -1,30 +1,33 @@
-import json
+import configparser
+import sys
 from pathlib import Path
+
+SECTION = "SmolSTT"
 
 DEFAULT_SETTINGS = {
     # API
     "api_url": "http://localhost:9876",
     "api_endpoint": "/v1/audio/transcriptions",
-    "model": "whisper-small",
+    "model": "whisper-tiny-en",
     "language": "en",
     # Hotkey
     "hotkey": "ctrl+shift+space",
     "hotkey_mode": "toggle",        # "toggle" | "hold"
     # Output
-    "output_clipboard": True,       # copy result to clipboard
-    "output_insert": False,         # insert at cursor
-    "output_insert_method": "paste", # "paste" | "type"
-    "typing_speed": 100,            # characters per second when output_insert_method=type
+    "output_clipboard": False,      # copy result to clipboard
+    "output_insert": True,          # insert at cursor
+    "output_insert_method": "type", # "paste" | "type"
+    "typing_speed": 500,            # characters per second when output_insert_method=type
     "show_notification": True,      # pop-up toast
     "show_sensitivity_reject_notification": True,
     "show_recording_indicator": True,
     "show_transcribing_notification": True,
-    "notification_font_size": 11,
-    "notification_width": 390,
-    "notification_height": 0,
-    "notification_fade_in_duration_s": 0.10,
-    "notification_duration_s": 4.0,
-    "notification_fade_duration_s": 0.22,
+    "notification_font_size": 15,
+    "notification_width": 400,
+    "notification_height": 400,
+    "notification_fade_in_duration_s": 0.5,
+    "notification_duration_s": 3.0,
+    "notification_fade_duration_s": 1.0,
     "app_theme": "dark",            # "dark" | "light"
     # Microphone
     "microphone_index": None,
@@ -32,12 +35,53 @@ DEFAULT_SETTINGS = {
     "microphone_sensitivity_enabled": False,
     "microphone_sensitivity": 120,  # minimum RMS level to keep recording
     "sample_rate": 16000,
-    # General
-    "autostart": False,
 }
 
-CONFIG_DIR = Path.home() / ".smolstt"
-CONFIG_FILE = CONFIG_DIR / "settings.json"
+# Keys managed outside the INI file (e.g. registry); never written to disk.
+_SKIP_KEYS = {"autostart"}
+
+
+def _config_path() -> Path:
+    """SmolSTT.ini sits next to the exe (frozen) or the project root (script)."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent / "SmolSTT.ini"
+    # __file__ is src/settings_manager.py → parent.parent is project root
+    return Path(__file__).resolve().parent.parent / "SmolSTT.ini"
+
+
+CONFIG_FILE = _config_path()
+
+
+def _serialize(value) -> str:
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _coerce(key: str, raw: str):
+    """Parse a raw INI string back to the correct Python type."""
+    default = DEFAULT_SETTINGS.get(key)
+    if default is None:
+        # e.g. microphone_index: try int, fall back to None
+        if not raw:
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            return raw or None
+    if isinstance(default, bool):
+        return raw.strip().lower() in ("true", "1", "yes")
+    if isinstance(default, int):
+        try:
+            return int(raw)
+        except ValueError:
+            return default
+    if isinstance(default, float):
+        try:
+            return float(raw)
+        except ValueError:
+            return default
+    return raw
 
 
 class SettingsManager:
@@ -47,10 +91,12 @@ class SettingsManager:
 
     def _load(self):
         try:
-            if CONFIG_FILE.exists():
-                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                    saved = json.load(f)
-                self._settings.update(saved)
+            config = configparser.RawConfigParser()
+            config.read(CONFIG_FILE, encoding="utf-8")
+            if config.has_section(SECTION):
+                for key, raw in config.items(SECTION):
+                    if key in DEFAULT_SETTINGS:
+                        self._settings[key] = _coerce(key, raw)
                 self._migrate()
         except Exception:
             pass
@@ -241,10 +287,16 @@ class SettingsManager:
             self.save()
 
     def save(self):
+        config = configparser.RawConfigParser()
+        config.add_section(SECTION)
+        for key, value in self._settings.items():
+            if key in _SKIP_KEYS:
+                continue
+            if value != DEFAULT_SETTINGS.get(key):
+                config.set(SECTION, key, _serialize(value))
         try:
-            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(self._settings, f, indent=2)
+                config.write(f)
         except Exception:
             pass
 
