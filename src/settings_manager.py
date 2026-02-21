@@ -8,17 +8,20 @@ DEFAULT_SETTINGS = {
     # API
     "api_url": "http://localhost:9876",
     "api_endpoint": "/v1/audio/transcriptions",
-    "model": "whisper-tiny-en",
-    "language": "en",
+    "model": "whisper-tiny",
+    "language": "auto",
     # Hotkey
     "hotkey": "ctrl+shift+space",
+    "system_audio_hotkey": "",
     "hotkey_mode": "toggle",        # "toggle" | "hold"
+    "suppress_hotkey": False,       # if True, hotkey keystrokes are swallowed system-wide
     # Output
     "output_clipboard": False,      # copy result to clipboard
     "output_insert": True,          # insert at cursor
     "output_insert_method": "type", # "paste" | "type"
     "typing_speed": 500,            # characters per second when output_insert_method=type
     "show_notification": True,      # pop-up toast
+    "show_empty_notification": True,
     "show_sensitivity_reject_notification": True,
     "show_recording_indicator": True,
     "show_transcribing_notification": True,
@@ -28,13 +31,22 @@ DEFAULT_SETTINGS = {
     "notification_fade_in_duration_s": 0.5,
     "notification_duration_s": 3.0,
     "notification_fade_duration_s": 1.0,
+    "notification_anchor": "bottom_right",
     "app_theme": "dark",            # "dark" | "light"
     # Microphone
     "microphone_index": None,
     "microphone_name": "Default",
-    "microphone_sensitivity_enabled": False,
-    "microphone_sensitivity": 120,  # minimum RMS level to keep recording
+    "microphone_sensitivity_enabled": False,  # legacy key, kept for compatibility
+    "microphone_sensitivity": 80,   # 0 disables sensitivity gating; otherwise minimum RMS
     "sample_rate": 16000,
+    # Local inference
+    "model_device": "gpu",          # "cpu" | "gpu"
+    "portable_models": False,       # store models in ./models/ instead of HF cache
+    "output_capture_source": "auto",
+    "test_input_file": "",
+    "whisper_backend": "local",     # "local" (faster-whisper) | "api" (external server)
+    "local_ready_models": "",       # JSON list of known-ready local model cache tokens
+    "speed_stats_mode": "current",  # "disabled" | "current" | "average"
 }
 
 # Keys managed outside the INI file (e.g. registry); never written to disk.
@@ -119,6 +131,23 @@ class SettingsManager:
                 self._settings[key] = val
                 changed = True
 
+        # Migrate model_device "all" → "gpu"
+        if self._settings.get("model_device") == "all":
+            self._settings["model_device"] = "gpu"
+            changed = True
+
+        # Normalize whisper_backend
+        if self._settings.get("whisper_backend") not in ("local", "api"):
+            self._settings["whisper_backend"] = "local"
+            changed = True
+        suppress_hotkey = bool(self._settings.get("suppress_hotkey", False))
+        if self._settings.get("suppress_hotkey") != suppress_hotkey:
+            self._settings["suppress_hotkey"] = suppress_hotkey
+            changed = True
+        if self._settings.get("speed_stats_mode") not in ("disabled", "current", "average"):
+            self._settings["speed_stats_mode"] = "disabled"
+            changed = True
+
         # Migrate old flat output_action → new split booleans
         if "output_action" in self._settings:
             old = self._settings.pop("output_action")
@@ -148,7 +177,7 @@ class SettingsManager:
             speed = int(self._settings.get("typing_speed", 100))
         except (TypeError, ValueError):
             speed = 100
-        speed = max(50, min(speed, 1000))
+        speed = max(50, min(speed, 5000))
         if self._settings.get("typing_speed") != speed:
             self._settings["typing_speed"] = speed
             changed = True
@@ -156,6 +185,10 @@ class SettingsManager:
         show_reject = bool(self._settings.get("show_sensitivity_reject_notification", True))
         if self._settings.get("show_sensitivity_reject_notification") != show_reject:
             self._settings["show_sensitivity_reject_notification"] = show_reject
+            changed = True
+        show_empty = bool(self._settings.get("show_empty_notification", True))
+        if self._settings.get("show_empty_notification") != show_empty:
+            self._settings["show_empty_notification"] = show_empty
             changed = True
         show_indicator = bool(self._settings.get("show_recording_indicator", True))
         if self._settings.get("show_recording_indicator") != show_indicator:
@@ -165,6 +198,15 @@ class SettingsManager:
         if self._settings.get("show_transcribing_notification") != show_transcribing:
             self._settings["show_transcribing_notification"] = show_transcribing
             changed = True
+        anchor = str(self._settings.get("notification_anchor", "bottom_right") or "bottom_right").strip().lower()
+        if anchor not in {
+            "bottom_right", "bottom_left", "top_right", "top_left",
+            "top_center", "bottom_center", "left_center", "right_center",
+        }:
+            anchor = "bottom_right"
+        if self._settings.get("notification_anchor") != anchor:
+            self._settings["notification_anchor"] = anchor
+            changed = True
 
         model_aliases = {
             "tiny": "whisper-tiny",
@@ -173,6 +215,7 @@ class SettingsManager:
             "medium": "whisper-medium",
             "large": "whisper-large",
             "large-v3": "whisper-large-v3",
+            "parakeet-tdt-0.6b-fp16": "parakeet-tdt-0.6b-v3-fp32",
         }
         model = str(self._settings.get("model", "whisper-small")).strip().lower()
         mapped = model_aliases.get(model, model)
@@ -181,10 +224,10 @@ class SettingsManager:
             changed = True
 
         try:
-            sensitivity = int(self._settings.get("microphone_sensitivity", 120))
+            sensitivity = int(self._settings.get("microphone_sensitivity", 80))
         except (TypeError, ValueError):
-            sensitivity = 120
-        sensitivity = max(1, min(sensitivity, 4000))
+            sensitivity = 80
+        sensitivity = max(0, min(sensitivity, 4000))
         if self._settings.get("microphone_sensitivity") != sensitivity:
             self._settings["microphone_sensitivity"] = sensitivity
             changed = True

@@ -50,6 +50,7 @@ class HotkeyManager:
         on_activate,
         on_deactivate=None,
         mode: str = "toggle",
+        suppress: bool = False,
     ):
         """
         Register a global hotkey.
@@ -72,9 +73,9 @@ class HotkeyManager:
                     "Cannot register mouse hotkey %r — pynput not installed", hotkey
                 )
         elif mode == "hold" and on_deactivate is not None:
-            self._register_keyboard_hold(hotkey, parts, on_activate, on_deactivate)
+            self._register_keyboard_hold(hotkey, parts, on_activate, on_deactivate, suppress=suppress)
         else:
-            self._register_keyboard_toggle(hotkey, on_activate)
+            self._register_keyboard_toggle(hotkey, on_activate, suppress=suppress)
 
     def unregister(self):
         if self._hotkey:
@@ -109,17 +110,14 @@ class HotkeyManager:
 
     # ── Keyboard-only registration ────────────────────────────────────
 
-    def _register_keyboard_toggle(self, hotkey: str, callback):
-        log.debug("Registering keyboard toggle: %s", hotkey)
-        try:
-            keyboard.add_hotkey(hotkey, callback, suppress=True)
-        except Exception:
-            keyboard.add_hotkey(hotkey, callback, suppress=False)
+    def _register_keyboard_toggle(self, hotkey: str, callback, suppress: bool = False):
+        log.debug("Registering keyboard toggle: %s suppress=%s", hotkey, suppress)
+        keyboard.add_hotkey(hotkey, callback, suppress=bool(suppress))
 
     def _register_keyboard_hold(
-        self, hotkey: str, parts: list[str], on_press, on_release
+        self, hotkey: str, parts: list[str], on_press, on_release, suppress: bool = False
     ):
-        log.debug("Registering keyboard hold: %s", hotkey)
+        log.debug("Registering keyboard hold: %s suppress=%s", hotkey, suppress)
         trigger = parts[-1]   # last token is the main key
 
         def _activate():
@@ -134,10 +132,7 @@ class HotkeyManager:
                 log.debug("Hold hotkey released: %s", hotkey)
                 on_release()
 
-        try:
-            keyboard.add_hotkey(hotkey, _activate, suppress=True)
-        except Exception:
-            keyboard.add_hotkey(hotkey, _activate, suppress=False)
+        keyboard.add_hotkey(hotkey, _activate, suppress=bool(suppress))
 
         self._release_hook = keyboard.on_release(_check_release)
 

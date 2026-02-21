@@ -216,3 +216,8 @@ venv
 build
 dist
 SmolSTT.ini
+docs
+*.mp3
+*.wav
+venv_activate.bat
+.claude

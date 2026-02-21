@@ -8,28 +8,34 @@ def normalize_theme(theme: str) -> str:
 def theme_colors(theme: str) -> dict[str, str]:
     if normalize_theme(theme) == "light":
         return {
-            "window_bg": "#f4f7fb",
-            "panel": "#ffffff",
+            "window_bg": "#e9eef5",
+            "panel": "#f2f5fa",
             "field": "#ffffff",
-            "text": "#1f2d3d",
-            "muted": "#5f7085",
-            "border": "#c9d4e0",
+            "text": "#172233",
+            "muted": "#5a6778",
+            "border": "#b7c2d0",
+            "disabled_bg": "#cfd6e0",
+            "disabled_text": "#6f7c8c",
+            "disabled_border": "#9aa8ba",
             "accent": "#0d84ff",
-            "menu_bg": "#ffffff",
-            "menu_hover": "#eaf3ff",
+            "menu_bg": "#f7f9fc",
+            "menu_hover": "#dde8f7",
             "tray_idle": "#3d7ac7",
             "tray_record": "#2cb34a",
         }
     return {
-        "window_bg": "#171b22",
-        "panel": "#171b22",
-        "field": "#202734",
-        "text": "#ecf2fa",
-        "muted": "#a6b6ca",
-        "border": "#3a475c",
-        "accent": "#2ba3ff",
-        "menu_bg": "#212a38",
-        "menu_hover": "#2d3b50",
+        "window_bg": "#1f2022",
+        "panel": "#292b2e",
+        "field": "#35383c",
+        "text": "#f0f1f3",
+        "muted": "#b0b3b8",
+        "border": "#666a70",
+        "disabled_bg": "#24262a",
+        "disabled_text": "#8f9399",
+        "disabled_border": "#4f535a",
+        "accent": "#2490ff",
+        "menu_bg": "#2b2d30",
+        "menu_hover": "#3a3d42",
         "tray_idle": "#3c78c2",
         "tray_record": "#2daa47",
     }
@@ -42,16 +48,23 @@ def settings_stylesheet(theme: str) -> str:
         f"QLabel {{ color: {c['text']}; }}"
         f"QGroupBox {{ border: 1px solid {c['border']}; border-radius: 8px; margin-top: 10px; padding: 10px 8px 8px 8px; background: {c['panel']}; }}"
         f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; left: 10px; padding: 0 4px; color: {c['muted']}; }}"
-        f"QLineEdit, QComboBox, QSpinBox {{ background: {c['field']}; color: {c['text']}; border: 1px solid {c['border']}; border-radius: 4px; padding: 4px; }}"
+        f"QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QPlainTextEdit {{ background: {c['field']}; color: {c['text']}; border: 1px solid {c['border']}; border-radius: 4px; padding: 4px; }}"
+        f"QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled, QDoubleSpinBox:disabled, QPlainTextEdit:disabled {{ background: {c['disabled_bg']}; color: {c['disabled_text']}; border: 1px solid {c['disabled_border']}; }}"
         f"QComboBox QAbstractItemView {{ background: {c['field']}; color: {c['text']}; border: 1px solid {c['border']}; selection-background-color: {c['menu_hover']}; selection-color: {c['text']}; }}"
         f"QPushButton {{ background: {c['field']}; color: {c['text']}; border: 1px solid {c['border']}; border-radius: 4px; padding: 5px 10px; }}"
-        f"QPushButton:disabled {{ color: {c['muted']}; }}"
+        f"QPushButton:disabled {{ background: {c['disabled_bg']}; color: {c['disabled_text']}; border: 1px solid {c['disabled_border']}; }}"
         f"QCheckBox, QRadioButton {{ color: {c['text']}; spacing: 8px; }}"
+        f"QCheckBox:disabled, QRadioButton:disabled {{ color: {c['disabled_text']}; }}"
         "QCheckBox::indicator, QRadioButton::indicator { width: 16px; height: 16px; }"
         f"QCheckBox::indicator {{ border: 1px solid {c['border']}; border-radius: 3px; background: {c['panel']}; }}"
         f"QCheckBox::indicator:checked {{ background: {c['accent']}; border: 1px solid {c['accent']}; }}"
-        f"QRadioButton::indicator {{ border: 1px solid {c['border']}; border-radius: 8px; background: {c['panel']}; }}"
-        f"QRadioButton::indicator:checked {{ background: {c['accent']}; border: 1px solid {c['accent']}; }}"
+        f"QCheckBox::indicator:disabled {{ background: {c['disabled_bg']}; border: 1px solid {c['disabled_border']}; }}"
+        f"QCheckBox::indicator:checked:disabled {{ background: {c['disabled_border']}; border: 1px solid {c['disabled_border']}; }}"
+        f"QRadioButton::indicator {{ border-radius: 8px; }}"
+        f"QRadioButton::indicator:unchecked:enabled {{ background: {c['field']}; border: 2px solid {c['border']}; }}"
+        f"QRadioButton::indicator:checked:enabled {{ background: {c['accent']}; border: 2px solid {c['accent']}; }}"
+        f"QRadioButton::indicator:unchecked:disabled {{ background: {c['disabled_bg']}; border: 2px solid {c['disabled_border']}; }}"
+        f"QRadioButton::indicator:checked:disabled {{ background: {c['disabled_border']}; border: 2px solid {c['disabled_border']}; }}"
     )
 
 

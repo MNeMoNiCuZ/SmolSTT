@@ -32,7 +32,7 @@ class AudioRecorder:
             log.error("Failed to enumerate audio devices: %s", exc)
         return devices
 
-    def start(self):
+    def start(self, level_callback=None):
         if self._recording:
             log.warning("start() called while already recording - ignored")
             return
@@ -55,7 +55,7 @@ class AudioRecorder:
         self._last_capture_info = {
             "rms": None,
             "threshold": self._get_sensitivity(),
-            "sensitivity_enabled": bool(self._settings.get("microphone_sensitivity_enabled", False)),
+            "sensitivity_enabled": self._get_sensitivity() > 0,
             "rejected_by_threshold": False,
         }
 
@@ -65,6 +65,12 @@ class AudioRecorder:
             if self._recording:
                 with self._lock:
                     self._frames.append(indata.copy())
+                if callable(level_callback):
+                    try:
+                        rms = float(np.sqrt(np.mean(np.square(indata.astype(np.float32)))))
+                        level_callback(rms)
+                    except Exception:
+                        pass
 
         try:
             self._stream = sd.InputStream(
@@ -103,8 +109,8 @@ class AudioRecorder:
         sample_rate = self._settings.get("sample_rate", 16000)
         duration = len(audio) / sample_rate
         rms = float(np.sqrt(np.mean(np.square(audio.astype(np.float32)))))
-        sensitivity_enabled = bool(self._settings.get("microphone_sensitivity_enabled", False))
         threshold = self._get_sensitivity()
+        sensitivity_enabled = threshold > 0
 
         log.info("Recording STOP - %d frames, %.2f seconds of audio captured", frame_count, duration)
         log.info("Recording level - rms=%.2f threshold=%d enabled=%s", rms, threshold, sensitivity_enabled)
@@ -137,10 +143,10 @@ class AudioRecorder:
 
     def _get_sensitivity(self) -> int:
         try:
-            threshold = int(self._settings.get("microphone_sensitivity", 120))
+            threshold = int(self._settings.get("microphone_sensitivity", 80))
         except (TypeError, ValueError):
-            threshold = 120
-        return max(1, min(threshold, 4000))
+            threshold = 80
+        return max(0, min(threshold, 4000))
 
     def get_last_capture_info(self) -> dict:
         return dict(self._last_capture_info)

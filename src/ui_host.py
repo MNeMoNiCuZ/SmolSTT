@@ -1,7 +1,9 @@
+import os
+import os
 import sys
 from typing import Callable
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from logger import log
 from theme import normalize_theme
@@ -24,10 +26,41 @@ class _UiInvoker(QtCore.QObject):
 
 class UIHost:
     def __init__(self):
+        self._configure_qt_boot_env()
         self._app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
         self._app.setQuitOnLastWindowClosed(False)
+        icon = self._resolve_app_icon()
+        if icon is not None:
+            self._app.setWindowIcon(icon)
         self._invoker = _UiInvoker()
         self._theme = "dark"
+
+    def _configure_qt_boot_env(self):
+        # On some Windows environments DPI awareness is already set by another
+        # component before Qt initializes. Qt then logs:
+        # "SetProcessDpiAwarenessContext() failed: Access is denied."
+        # This is benign but noisy; suppress this specific Qt category.
+        rules = os.environ.get("QT_LOGGING_RULES", "").strip()
+        target = "qt.qpa.window=false"
+        if target in rules:
+            return
+        if rules:
+            os.environ["QT_LOGGING_RULES"] = f"{rules};{target}"
+        else:
+            os.environ["QT_LOGGING_RULES"] = target
+
+    def _resolve_app_icon(self) -> QtGui.QIcon | None:
+        candidates = [
+            os.path.join(os.path.dirname(__file__), "assets", "smolstt.ico"),
+            os.path.join(os.path.dirname(__file__), "smolstt.ico"),
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "src", "assets", "smolstt.ico"),
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                icon = QtGui.QIcon(path)
+                if not icon.isNull():
+                    return icon
+        return None
 
     def call_soon(self, fn: Callable[[], None]) -> None:
         self._invoker.invoke.emit(fn)

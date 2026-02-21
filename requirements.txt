@@ -9,3 +9,7 @@ pyautogui>=0.9.54
 pynput>=1.7.6
 PyQt6>=6.7.0
 pyinstaller>=6.0.0
+onnx-asr[hub]>=0.10.0
+onnxruntime>=1.18.1
+faster-whisper>=1.0.0
+PyAudioWPatch>=0.2.12.7
