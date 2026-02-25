@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src
 
 from api_client import WhisperClient
 from autostart import set_autostart, is_autostart_enabled
-from local_inference import LocalInferenceEngine, is_parakeet_model, is_whisper_model
+from local_inference import LocalInferenceEngine, is_parakeet_model, is_whisper_model, _no_window_kwargs
 from hotkey_manager import HotkeyManager
 from logger import log
 from overlay import RecordingOverlay
@@ -306,11 +306,12 @@ class SmolSTTApp:
                     and threshold is not None
                     and float(rms) < float(threshold)
                 ):
-                    msg = f"Sensitivity too low. RMS {rms:.2f}, threshold {threshold}."
+                    ratio = f"{float(rms):.2f}/{float(threshold):.0f}"
+                    msg = f"Sensitivity Threshold: <b>{ratio}</b>"
                     log.info("Sensitivity rejection toast: %s", msg)
                     if self._settings.get("show_sensitivity_reject_notification", True):
                         self._toast.show(
-                            "Sensitivity",
+                            "Sensitivity Threshold",
                             msg,
                             theme=self.current_theme(),
                             font_size=self._toast_font_size(),
@@ -1096,7 +1097,7 @@ class SmolSTTApp:
                 "pipe:1",
             ]
             try:
-                result = subprocess.run(cmd, capture_output=True, timeout=90)
+                result = subprocess.run(cmd, capture_output=True, timeout=90, **_no_window_kwargs())
                 if result.returncode == 0 and result.stdout:
                     return result.stdout
             except Exception:

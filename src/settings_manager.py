@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = {
     "output_clipboard": False,      # copy result to clipboard
     "output_insert": True,          # insert at cursor
     "output_insert_method": "type", # "paste" | "type"
-    "typing_speed": 500,            # characters per second when output_insert_method=type
+    "typing_speed": 1000,           # characters per second when output_insert_method=type
     "show_notification": True,      # pop-up toast
     "show_empty_notification": True,
     "show_sensitivity_reject_notification": True,
@@ -174,9 +174,9 @@ class SettingsManager:
                 changed = True
 
         try:
-            speed = int(self._settings.get("typing_speed", 100))
+            speed = int(self._settings.get("typing_speed", 1000))
         except (TypeError, ValueError):
-            speed = 100
+            speed = 1000
         speed = max(50, min(speed, 5000))
         if self._settings.get("typing_speed") != speed:
             self._settings["typing_speed"] = speed

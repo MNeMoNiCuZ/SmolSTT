@@ -170,7 +170,7 @@ class SensitivityTestDialog(QtWidgets.QDialog):
         root.addWidget(self._level_label)
 
         row = QtWidgets.QHBoxLayout()
-        row.addWidget(QtWidgets.QLabel("Threshold"))
+        row.addWidget(QtWidgets.QLabel("Sensitivity Threshold"))
         self._threshold = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
         self._threshold.setRange(0, 4000)
         self._threshold.setValue(max(0, min(initial_threshold, 4000)))
@@ -180,14 +180,11 @@ class SensitivityTestDialog(QtWidgets.QDialog):
         row.addWidget(self._threshold_value)
         root.addLayout(row)
 
-        self._state = QtWidgets.QLabel("Click Start to monitor microphone level.")
-        root.addWidget(self._state)
-
         btns = QtWidgets.QHBoxLayout()
         self._start_btn = QtWidgets.QPushButton("Start")
         self._stop_btn = QtWidgets.QPushButton("Stop")
         self._stop_btn.setEnabled(False)
-        ok_btn = QtWidgets.QPushButton("Use Threshold")
+        ok_btn = QtWidgets.QPushButton("Use Sensitivity Threshold")
         close_btn = QtWidgets.QPushButton("Close")
         btns.addWidget(self._start_btn)
         btns.addWidget(self._stop_btn)
@@ -235,11 +232,10 @@ class SensitivityTestDialog(QtWidgets.QDialog):
             )
             self._stream.start()
             self._timer.start(80)
-            self._state.setText("Listening...")
             self._start_btn.setEnabled(False)
             self._stop_btn.setEnabled(True)
         except Exception as exc:
-            self._state.setText(f"Could not start test: {exc}")
+            log.error("Could not start sensitivity test stream: %s", exc)
             self._stream = None
 
     def _stop(self):
@@ -264,11 +260,6 @@ class SensitivityTestDialog(QtWidgets.QDialog):
         val = int(max(0, min(4000, latest)))
         self._meter.setValue(val)
         self._level_label.setText(f"Live RMS: {val}")
-
-        if val >= self._threshold.value():
-            self._state.setText("Current voice level is above threshold.")
-        else:
-            self._state.setText("Current voice is below threshold. Lower threshold for more sensitivity.")
 
 
 class SettingsWindow:
@@ -550,15 +541,19 @@ class SettingsWindow:
         # ── Hotkey ────────────────────────────────────────────────────────
         self._hotkey = QtWidgets.QLineEdit(self._settings.get("hotkey"))
         self._hotkey.setToolTip("Global hotkey for microphone capture.")
+        self._hotkey.setReadOnly(True)
+        self._hotkey.setEnabled(False)
         hk_btn = QtWidgets.QPushButton("Set")
         hk_btn.setToolTip("Open hotkey picker dialog.")
         hk_btn.clicked.connect(self._pick_hotkey)
         self._system_audio_hotkey = QtWidgets.QLineEdit(self._settings.get("system_audio_hotkey", ""))
         self._system_audio_hotkey.setToolTip("Global hotkey for system audio capture/transcription.")
-        self._hotkey.setMinimumWidth(220)
-        self._hotkey.setMaximumWidth(220)
-        self._system_audio_hotkey.setMinimumWidth(220)
-        self._system_audio_hotkey.setMaximumWidth(220)
+        self._system_audio_hotkey.setReadOnly(True)
+        self._system_audio_hotkey.setEnabled(False)
+        self._hotkey.setMinimumWidth(154)
+        self._hotkey.setMaximumWidth(154)
+        self._system_audio_hotkey.setMinimumWidth(154)
+        self._system_audio_hotkey.setMaximumWidth(154)
         hk_sys_btn = QtWidgets.QPushButton("Set")
         hk_sys_btn.setToolTip("Open hotkey picker dialog.")
         hk_sys_btn.clicked.connect(self._pick_system_audio_hotkey)
@@ -634,15 +629,14 @@ class SettingsWindow:
         mic_row.addWidget(QtWidgets.QLabel("Microphone"))
         mic_row.addWidget(self._mic)
         mic_row.addStretch(1)
-        threshold_label = QtWidgets.QLabel("Threshold")
-        threshold_label.setFixedWidth(72)
+        threshold_label = QtWidgets.QLabel("Sensitivity Threshold")
+        threshold_label.setMinimumWidth(140)
         threshold_label.setAlignment(
             QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
         )
         mic_row.addWidget(threshold_label)
         mic_row.addWidget(self._sensitivity)
         mic_row.addWidget(sens_btn)
-        mic_row.addStretch(1)
         mic_layout.addLayout(mic_row)
 
         # ── Output ────────────────────────────────────────────────────────

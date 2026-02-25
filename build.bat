@@ -25,7 +25,7 @@ taskkill /f /im SmolSTT.exe >nul 2>nul
 set "PI_TEMP=.pyinstaller_tmp\%RANDOM%%RANDOM%"
 set "PI_DIST=.pyinstaller_tmp\%RANDOM%%RANDOM%\dist"
 set "PI_WORK=%PI_TEMP%\work"
-"%PY%" -m PyInstaller --noconfirm --onefile --windowed --name SmolSTT --paths src --icon src\assets\smolstt.ico --workpath "%PI_WORK%" --specpath "." --distpath "%PI_DIST%" app.py || exit /b 1
+"%PY%" -m PyInstaller --noconfirm --onefile --windowed --name SmolSTT --paths src --icon src\assets\smolstt.ico --add-data "src\assets\smolstt.ico;assets" --workpath "%PI_WORK%" --specpath "." --distpath "%PI_DIST%" app.py || exit /b 1
 
 if not exist "dist" mkdir dist
 copy /y "%PI_DIST%\SmolSTT.exe" "dist\SmolSTT.exe" >nul 2>nul

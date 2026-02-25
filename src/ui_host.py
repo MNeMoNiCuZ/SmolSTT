@@ -1,5 +1,4 @@
 import os
-import os
 import sys
 from typing import Callable
 
@@ -50,7 +49,9 @@ class UIHost:
             os.environ["QT_LOGGING_RULES"] = target
 
     def _resolve_app_icon(self) -> QtGui.QIcon | None:
+        runtime_root = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(__file__)))
         candidates = [
+            os.path.join(runtime_root, "assets", "smolstt.ico"),
             os.path.join(os.path.dirname(__file__), "assets", "smolstt.ico"),
             os.path.join(os.path.dirname(__file__), "smolstt.ico"),
             os.path.join(os.path.dirname(os.path.dirname(__file__)), "src", "assets", "smolstt.ico"),

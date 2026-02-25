@@ -12,6 +12,16 @@ import time
 
 from logger import log
 
+
+def _no_window_kwargs() -> dict:
+    """Return subprocess kwargs that suppress the console window on Windows."""
+    if sys.platform == "win32":
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = 0  # SW_HIDE
+        return {"startupinfo": si, "creationflags": subprocess.CREATE_NO_WINDOW}
+    return {}
+
 ONNX_MODEL_IDS = {
     "parakeet-tdt-0.6b-v3": "nemo-parakeet-tdt-0.6b-v3",
     "parakeet-tdt-0.6b-v3-fp32": "istupakov/parakeet-tdt-0.6b-v3-onnx",
@@ -50,6 +60,7 @@ def _cuda_available() -> bool:
             ["nvidia-smi", "-L"],
             capture_output=True,
             timeout=5,
+            **_no_window_kwargs(),
         )
         return r.returncode == 0 and bool(r.stdout.strip())
     except Exception:
@@ -75,6 +86,7 @@ def _ctranslate2_cuda_ok() -> bool:
             ],
             capture_output=True,
             timeout=30,
+            **_no_window_kwargs(),
         )
         return r.returncode == 0
     except Exception:
@@ -100,6 +112,7 @@ def _whisper_cuda_load_ok(model_id: str, compute_type: str) -> bool:
             ],
             capture_output=True,
             timeout=120,
+            **_no_window_kwargs(),
         )
         return r.returncode == 0
     except Exception:
@@ -223,6 +236,7 @@ class LocalInferenceEngine:
                 capture_output=True,
                 text=True,
                 timeout=300,
+                **_no_window_kwargs(),
             )
             if result.returncode != 0:
                 err = (result.stderr or "").strip()
@@ -314,6 +328,7 @@ class LocalInferenceEngine:
                 text=True,
                 timeout=300,
                 env=env,
+                **_no_window_kwargs(),
             )
             if result.returncode != 0:
                 err = (result.stderr or "").strip()
@@ -401,6 +416,7 @@ class LocalInferenceEngine:
                 text=True,
                 timeout=25,
                 env=env,
+                **_no_window_kwargs(),
             )
             ok = result.returncode == 0
             self._probe_cache[token] = ok
@@ -427,6 +443,7 @@ class LocalInferenceEngine:
                 text=True,
                 timeout=25,
                 env=env,
+                **_no_window_kwargs(),
             )
             ok = result.returncode == 0
             self._probe_cache[token] = ok
